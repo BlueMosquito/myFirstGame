@@ -10,22 +10,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyFirstGame">
         <activity
+            android:name=".GameActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar"/>
+        <activity
             android:name=".Splash"
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@style/NewTheme">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-    </activity>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".PlayActivity"
             android:exported="true"
             android:screenOrientation="landscape"
-            android:theme="@style/NewTheme">
-        </activity>
+            android:theme="@style/NewTheme"></activity>
     </application>
 
 </manifest>
