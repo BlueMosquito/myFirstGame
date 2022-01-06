@@ -19,11 +19,6 @@ public class PlayActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(PlayActivity.this, GameActivity.class));
-            }
-        });
+        findViewById(R.id.play).setOnClickListener(view -> startActivity(new Intent(PlayActivity.this, GameActivity.class)));
     }
 }

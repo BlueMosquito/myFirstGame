@@ -11,7 +11,7 @@ public class BackGround {
 
     BackGround (int screenX, int screenY, Resources res){
 
-        background = BitmapFactory.decodeResource(res, R.drawable.godfall);
+        background = BitmapFactory.decodeResource(res, R.drawable.game2d);
         background = Bitmap.createScaledBitmap(background, screenX, screenY, false);
     }
 }
