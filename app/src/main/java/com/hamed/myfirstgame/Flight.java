@@ -14,7 +14,7 @@ public class Flight {
     Bitmap flight1;
 
     Flight(int screenY, Resources res){
-        flight1 = BitmapFactory.decodeResource(res, R.drawable);
+        flight1 = BitmapFactory.decodeResource(res, R.drawable.minion1);
 
         width = flight1.getWidth();
         height = flight1.getHeight();

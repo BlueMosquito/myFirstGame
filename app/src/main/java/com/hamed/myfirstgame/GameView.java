@@ -9,11 +9,11 @@ import android.view.SurfaceView;
 public class GameView extends SurfaceView implements Runnable{
 
     private Thread thread;
-    private boolean isPlaying;
+    private boolean isPlaying, player2IsPlaying;
     private BackGround backGround1, backGround2;
     private int screenX, screenY;
     private Paint paint;
-    private Flight flight;
+    private Flight flight, flight2;
     public static float screenRatioX, screenRatioY;
 
     public GameView(Context context, int screenX, int screenY) {
@@ -41,6 +41,8 @@ public class GameView extends SurfaceView implements Runnable{
             update();
             draw();
             sleep();
+
+
         }
     }
 
@@ -81,9 +83,8 @@ public class GameView extends SurfaceView implements Runnable{
     }
 
     public void sleep(){
-        //60fs
         try {
-            Thread.sleep(17);
+            Thread.sleep(33,5);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -114,6 +115,7 @@ public class GameView extends SurfaceView implements Runnable{
             case MotionEvent.ACTION_DOWN:
                 if (event.getX() < screenX / 2){
                     flight.isGoingUp = true;
+
                 }
                 break;
             case MotionEvent.ACTION_UP:

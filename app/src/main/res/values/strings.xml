@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">myFirstGame</string>
     <string name="gameTitle">Minions With Guns</string>
-    <string name="play">Play</string>
-    <string name="highScore">High Score</string>
+    <string name="play">Find Players</string>
+    <string name="highScore">Message</string>
+    <string name="send">Send</string>
+    <string name="findOtherPlayers">Find P2P</string>
+    <string name="wifiOnOff">Wifi On/Off</string>
 </resources>
