@@ -3,13 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.hamed.myfirstgame">
 
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <uses-permission
+        android:required="true"
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:ignore="CoarseFineLocation" />
+    <uses-permission
+        android:required="true"
+        android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission
+        android:required="true"
+        android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission
+        android:required="true"
+        android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -38,7 +45,7 @@
             android:name=".PlayActivity"
             android:exported="true"
             android:screenOrientation="landscape"
-            android:theme="@style/NewTheme"></activity>
+            android:theme="@style/NewTheme" />
     </application>
 
 </manifest>
