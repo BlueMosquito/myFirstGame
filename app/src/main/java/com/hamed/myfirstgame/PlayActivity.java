@@ -1,19 +1,27 @@
 package com.hamed.myfirstgame;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
-import android.annotation.SuppressLint;
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,6 +29,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,14 +46,23 @@ public class PlayActivity extends AppCompatActivity {
     ListView listView;
     TextView readMessage;
     EditText writeMessage;
+
     WifiManager wifiManager;
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
+
     BroadcastReceiver mReceiver;
     IntentFilter mIntentFilter;
+
     List<WifiP2pDevice> peers = new ArrayList<>();
     String[] deviceNameArray;
     WifiP2pDevice[] deviceArray;
+
+    static final int MESSAGE_READ = 1;
+
+    Server server;
+    Client client;
+    SendReceive sendReceive;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,13 +74,114 @@ public class PlayActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_play);
 
+        initial();
+        exqListener();
+
+        findViewById(R.id.play).setOnClickListener(view -> startActivity(new Intent(PlayActivity.this, GameActivity.class)));
+    }
+
+    Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(@NonNull Message msg) {
+            switch (msg.what){
+                case MESSAGE_READ:
+                    byte[] readBuff = (byte[]) msg.obj;
+                    String tempMsg = new String(readBuff, 0, msg.arg1);
+                    readMessage.setText(tempMsg);
+                    break;
+            }
+            return false;
+        }
+    });
+
+    private void exqListener() {
+        btnOnOff.setOnClickListener(v -> {
+            if (wifiManager.isWifiEnabled()) {
+                wifiManager.setWifiEnabled(false);
+                btnOnOff.setText("ON");
+            } else {
+                wifiManager.setWifiEnabled(true);
+                btnOnOff.setText("OFF");
+            }
+        });
+
+        btnFindOthers.setOnClickListener(v -> {
+            if (ActivityCompat.checkSelfPermission(PlayActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(int i) {
+                        Toast.makeText(getApplicationContext(), "Fail", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            } else {
+                ActivityCompat.requestPermissions(PlayActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+            }
+        });
+
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            final WifiP2pDevice device = deviceArray[position];
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = device.deviceAddress;
+
+            if (ActivityCompat.checkSelfPermission(PlayActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(getApplicationContext(), "Connected to: " + device.deviceName, Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(int i) {
+                        Toast.makeText(getApplicationContext(), "Not Connected!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }else{
+                ActivityCompat.requestPermissions(PlayActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+            }
+
+        });
+
+        btnSendMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String msg = writeMessage.getText().toString();
+                sendReceive.write(msg.getBytes(StandardCharsets.UTF_8));
+            }
+        });
+    }
+
+    public void initial(){
         btnOnOff = findViewById(R.id.wifi);
         btnFindOthers = findViewById(R.id.findPlayers);
         btnSendMessage = findViewById(R.id.send);
         listView = findViewById(R.id.peerListView);
         readMessage = findViewById(R.id.highScore);
+        writeMessage = findViewById(R.id.message);
 
-        writeMessage = findViewById(R.id.editText);
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -68,42 +194,14 @@ public class PlayActivity extends AppCompatActivity {
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
-        btnOnOff.setOnClickListener(v -> {
-            if (wifiManager.isWifiEnabled()) {
-                wifiManager.setWifiEnabled(false);
-            } else {
-                wifiManager.setWifiEnabled(true);
-            }
-        });
-
-        btnFindOthers.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("MissingPermission")
-            @Override
-            public void onClick(View v) {
-                mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(getApplicationContext(), "Success", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onFailure(int i) {
-                        Toast.makeText(getApplicationContext(), "Fail", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-
-        findViewById(R.id.play).setOnClickListener(view -> startActivity(new Intent(PlayActivity.this, GameActivity.class)));
     }
 
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
-            List<WifiP2pDevice> refreshedPeers = (List<WifiP2pDevice>) peerList.getDeviceList();
-            if (!refreshedPeers.equals(peers)){
+            if (!peerList.getDeviceList().equals(peers)){
                 peers.clear();
-                peers.addAll(refreshedPeers);
+                peers.addAll(peerList.getDeviceList());
 
                 deviceNameArray = new String[peerList.getDeviceList().size()];
                 deviceArray = new WifiP2pDevice[peerList.getDeviceList().size()];
@@ -127,11 +225,23 @@ public class PlayActivity extends AppCompatActivity {
         }
     };
 
+    WifiP2pManager.ConnectionInfoListener connectionInfoListener = wifiP2pInfo -> {
+        final InetAddress owner = wifiP2pInfo.groupOwnerAddress;
+
+        if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner){
+            Toast.makeText(getApplicationContext(), "Host!", Toast.LENGTH_SHORT).show();
+            server = new Server();
+            server.start();
+        }else if (wifiP2pInfo.groupFormed){
+            Toast.makeText(getApplicationContext(), "Client!", Toast.LENGTH_SHORT).show();
+            client = new Client(owner);
+            client.start();
+        }
+    };
+
     @Override
     protected void onResume(){
         super.onResume();
-        WiFiDirectBroadcastReceiver receiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
-
         registerReceiver(mReceiver, mIntentFilter);
     }
 
@@ -140,4 +250,83 @@ public class PlayActivity extends AppCompatActivity {
         super.onPause();
         unregisterReceiver(mReceiver);
    }
+
+   public class Server extends Thread{
+        Socket socket;
+        ServerSocket serverSocket;
+
+        @Override
+       public void run(){
+            try {
+                serverSocket = new ServerSocket(8888);
+                socket = serverSocket.accept();
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+   }
+
+    private class SendReceive extends Thread{
+        private Socket socket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
+
+        public SendReceive(Socket skt){
+            socket = skt;
+            try {
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run(){
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            while (socket != null){
+                try {
+                    bytes = inputStream.read(buffer);
+                    if (bytes > 0){
+                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                    }
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void write(byte[] bytes){
+            try {
+                outputStream.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class Client extends Thread{
+        Socket socket;
+        String hostAdd;
+
+        public Client(InetAddress host){
+            hostAdd = host.getHostAddress();
+            socket = new Socket();
+        }
+
+        @Override
+        public void run(){
+            try {
+                socket.connect(new InetSocketAddress(hostAdd, 8888), 500);
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
 }
