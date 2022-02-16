@@ -33,11 +33,17 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
 
-            if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
-                Toast.makeText(context, "Wifi is ON", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(context, "Wifi is OFF", Toast.LENGTH_SHORT).show();
+            if (ActivityCompat.checkSelfPermission(playActivity, Manifest.permission.CHANGE_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+
+                if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
+                    Toast.makeText(context, "Wifi is ON", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(context, "Wifi is OFF", Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                ActivityCompat.requestPermissions(playActivity, new String[]{Manifest.permission.CHANGE_WIFI_STATE}, 1);
             }
+
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
 
             if (mManager != null) {

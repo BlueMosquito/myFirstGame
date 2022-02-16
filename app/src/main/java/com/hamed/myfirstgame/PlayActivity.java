@@ -95,15 +95,22 @@ public class PlayActivity extends AppCompatActivity {
     });
 
     private void exqListener() {
+
         btnOnOff.setOnClickListener(v -> {
-            if (wifiManager.isWifiEnabled()) {
-                wifiManager.setWifiEnabled(false);
-                btnOnOff.setText("ON");
-            } else {
-                wifiManager.setWifiEnabled(true);
-                btnOnOff.setText("OFF");
+
+            if (ActivityCompat.checkSelfPermission(PlayActivity.this, Manifest.permission.CHANGE_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+                if (wifiManager.isWifiEnabled()) {
+                    wifiManager.setWifiEnabled(false);
+                    btnOnOff.setText("ON");
+                } else {
+                    wifiManager.setWifiEnabled(true);
+                    btnOnOff.setText("OFF");
+                }
+            }else {
+                ActivityCompat.requestPermissions(PlayActivity.this, new String[]{Manifest.permission.CHANGE_WIFI_STATE}, 1);
             }
         });
+
 
         btnFindOthers.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(PlayActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -168,7 +175,8 @@ public class PlayActivity extends AppCompatActivity {
         btnSendMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = writeMessage.getText().toString();
+                String msg = "Connected";
+                //writeMessage.getText().toString();
                 sendReceive.write(msg.getBytes(StandardCharsets.UTF_8));
             }
         });
@@ -186,7 +194,6 @@ public class PlayActivity extends AppCompatActivity {
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
-        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
 
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
@@ -199,6 +206,7 @@ public class PlayActivity extends AppCompatActivity {
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
+
             if (!peerList.getDeviceList().equals(peers)){
                 peers.clear();
                 peers.addAll(peerList.getDeviceList());
@@ -229,11 +237,13 @@ public class PlayActivity extends AppCompatActivity {
         final InetAddress owner = wifiP2pInfo.groupOwnerAddress;
 
         if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner){
-            Toast.makeText(getApplicationContext(), "Host!", Toast.LENGTH_SHORT).show();
+            readMessage.setText("Host");
+            //Toast.makeText(getApplicationContext(), "Host!", Toast.LENGTH_SHORT).show();
             server = new Server();
             server.start();
         }else if (wifiP2pInfo.groupFormed){
-            Toast.makeText(getApplicationContext(), "Client!", Toast.LENGTH_SHORT).show();
+            readMessage.setText("Client");
+            //Toast.makeText(getApplicationContext(), "Client!", Toast.LENGTH_SHORT).show();
             client = new Client(owner);
             client.start();
         }
@@ -248,7 +258,8 @@ public class PlayActivity extends AppCompatActivity {
    @Override
    protected void onPause(){
         super.onPause();
-        unregisterReceiver(mReceiver);
+        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
+        //unregisterReceiver(mReceiver);
    }
 
    public class Server extends Thread{
@@ -269,12 +280,12 @@ public class PlayActivity extends AppCompatActivity {
    }
 
     private class SendReceive extends Thread{
-        private Socket socket;
+        private final Socket socket;
         private InputStream inputStream;
         private OutputStream outputStream;
 
         public SendReceive(Socket skt){
-            socket = skt;
+            this.socket = skt;
             try {
                 inputStream = socket.getInputStream();
                 outputStream = socket.getOutputStream();

@@ -6,6 +6,9 @@ import android.graphics.Paint;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GameView extends SurfaceView implements Runnable{
 
     private Thread thread;
@@ -14,6 +17,7 @@ public class GameView extends SurfaceView implements Runnable{
     private int screenX, screenY;
     private Paint paint;
     private Flight flight, flight2;
+    private List<Bullet> bullets;
     public static float screenRatioX, screenRatioY;
 
     public GameView(Context context, int screenX, int screenY) {
@@ -27,7 +31,9 @@ public class GameView extends SurfaceView implements Runnable{
         backGround1 = new BackGround(screenX, screenY, getResources());
         backGround2 = new BackGround(screenX, screenY, getResources());
 
-        flight = new Flight(screenY, getResources());
+        flight = new Flight(this, screenY, getResources());
+
+        bullets = new ArrayList<>();
 
         backGround2.x = screenX;
 
@@ -67,6 +73,18 @@ public class GameView extends SurfaceView implements Runnable{
 
         if (flight.y >= screenY - flight.height)
             flight.y = screenY - flight.height;
+
+        List<Bullet> removeBullet = new ArrayList<>();
+        for (Bullet bullet : bullets){
+            if(bullet.x > screenX){
+                removeBullet.add(bullet);
+            }
+            bullet.x += 50 * screenRatioX;
+        }
+
+        for (Bullet bullet : removeBullet){
+            bullets.remove(bullet);
+        }
     }
 
     public void draw(){
@@ -77,6 +95,10 @@ public class GameView extends SurfaceView implements Runnable{
             canvas.drawBitmap(backGround2.background, backGround2.x, backGround2.y, paint);
 
             canvas.drawBitmap(flight.getFlight(), flight.x, flight.y, paint);
+
+            for (Bullet bullet : bullets){
+                canvas.drawBitmap(bullet.bullet, bullet.x, bullet.y, paint);
+            }
 
             getHolder().unlockCanvasAndPost(canvas);
         }
@@ -120,10 +142,19 @@ public class GameView extends SurfaceView implements Runnable{
                 break;
             case MotionEvent.ACTION_UP:
                 flight.isGoingUp = false;
+                if (event.getX() > screenX / 2){
+                    flight.shooting++;
+                }
                 break;
         }
 
         return true;
     }
 
+    public void newBullet() {
+        Bullet firstBullet = new Bullet(getResources());
+        firstBullet.x = flight.x + flight.width;
+        firstBullet.y = flight.y + (flight.height / 2);
+        bullets.add(firstBullet);
+    }
 }
