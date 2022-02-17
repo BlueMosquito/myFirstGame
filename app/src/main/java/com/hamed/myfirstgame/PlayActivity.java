@@ -172,12 +172,16 @@ public class PlayActivity extends AppCompatActivity {
 
         });
 
+        String msg = "Connected";
         btnSendMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = "Connected";
-                //writeMessage.getText().toString();
-                sendReceive.write(msg.getBytes(StandardCharsets.UTF_8));
+                writeMessage.getText().toString();
+                //byte[] byteM = msg.getBytes();
+                //byte[] byteM = new byte[1];
+                //byteM[0] = 1;
+                sendReceive.write(msg.getBytes());
+                readMessage.setText(msg);
             }
         });
     }
@@ -280,12 +284,12 @@ public class PlayActivity extends AppCompatActivity {
    }
 
     private class SendReceive extends Thread{
-        private final Socket socket;
+        private Socket socket;
         private InputStream inputStream;
         private OutputStream outputStream;
 
         public SendReceive(Socket skt){
-            this.socket = skt;
+            socket = skt;
             try {
                 inputStream = socket.getInputStream();
                 outputStream = socket.getOutputStream();
@@ -304,6 +308,7 @@ public class PlayActivity extends AppCompatActivity {
                     bytes = inputStream.read(buffer);
                     if (bytes > 0){
                         handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                        //send...!
                     }
                 }catch (IOException e){
                     e.printStackTrace();
@@ -323,14 +328,17 @@ public class PlayActivity extends AppCompatActivity {
     public class Client extends Thread{
         Socket socket;
         String hostAdd;
+        ServerSocket serverSocket;
 
         public Client(InetAddress host){
+
             hostAdd = host.getHostAddress();
             socket = new Socket();
         }
 
         @Override
         public void run(){
+
             try {
                 socket.connect(new InetSocketAddress(hostAdd, 8888), 500);
                 sendReceive = new SendReceive(socket);

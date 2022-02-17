@@ -37,13 +37,13 @@ public class Flight {
         bullet4 = BitmapFactory.decodeResource(res, R.drawable.bullet4);
         bullet5 = BitmapFactory.decodeResource(res, R.drawable.bullet5);
 
-
+/*
         bullet = Bitmap.createScaledBitmap(bullet, width, height, false);
         bullet2 = Bitmap.createScaledBitmap(bullet2, width, height, false);
         bullet3 = Bitmap.createScaledBitmap(bullet3, width, height, false);
         bullet4 = Bitmap.createScaledBitmap(bullet4, width, height, false);
         bullet5 = Bitmap.createScaledBitmap(bullet5, width, height, false);
-
+*/
         y = screenY / 2;
         x = (int) (64*screenRatioX);
 
